@@ -3,11 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -50,9 +52,11 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("adsflkjasdflkj")
     w.Header().Set("access-control-allow-origin", "*")
 		upath := path.Clean(r.URL.Path) 
-		dir, err := os.Open(path.Join(root, upath))
+    dirPath := path.Join(root, upath)
+		dir, err := os.Open(dirPath)
 		if err != nil {
 			msg, code := toHTTPError(err)
 			http.Error(w, msg, code)
@@ -69,6 +73,11 @@ func FileStatsHandler(root string) http.HandlerFunc {
 			serverDirectory(w, r, dir)
 			return
 		}
-		http.Redirect(w, r, path.Join("/raw/", upath), http.StatusMovedPermanently)
+    action := r.URL.Query().Get("action")
+    fmt.Println("action: ", action)
+    if action == "download" {
+      w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
+    }
+    http.ServeContent(w, r, stats.Name(), stats.ModTime(), dir)
 	}
 }
