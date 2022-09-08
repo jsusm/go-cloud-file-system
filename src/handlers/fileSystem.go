@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -34,11 +36,12 @@ type dirEntry struct {
 
 func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 	dirs, err := dir.Readdir(128)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		msg, code := toHTTPError(err)
 		http.Error(w, msg, code)
+    return
 	}
-	var body []dirEntry
+	var body = []dirEntry{}
 	for _, d := range dirs {
 		body = append(body, dirEntry{d.Name(), d.IsDir(), d.ModTime(), d.Size()})
 	}
