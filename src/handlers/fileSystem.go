@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"io/fs"
-	"log"
 	"net/http"
 	"os"
 	"path"
