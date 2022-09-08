@@ -49,7 +49,7 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("access-control-allow-origin", "*")
-		upath := r.URL.Path
+		upath := path.Clean(r.URL.Path) 
 		dir, err := os.Open(path.Join(root, upath))
 		if err != nil {
 			msg, code := toHTTPError(err)
