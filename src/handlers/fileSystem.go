@@ -52,7 +52,6 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-    fmt.Println("adsflkjasdflkj")
     w.Header().Set("access-control-allow-origin", "*")
 		upath := path.Clean(r.URL.Path) 
     dirPath := path.Join(root, upath)
@@ -74,7 +73,6 @@ func FileStatsHandler(root string) http.HandlerFunc {
 			return
 		}
     action := r.URL.Query().Get("action")
-    fmt.Println("action: ", action)
     if action == "download" {
       w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
     }
