@@ -53,16 +53,16 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 	}
 	var body = ServeDirectoryResponse{}
 	for _, d := range dirs {
-    if d.IsDir(){
-      body.Directories = append(body.Directories, dirEntry{ Name: d.Name()})
-    }else{
-      body.Files = append(body.Files, fileEntry{
-        Name: d.Name(),
-        ModTime: d.ModTime(),
-        Size: d.Size(),
-        Type: mime.TypeByExtension(filepath.Ext(d.Name())),
-      })
-    }
+		if d.IsDir() {
+			body.Directories = append(body.Directories, dirEntry{Name: d.Name()})
+		} else {
+			body.Files = append(body.Files, fileEntry{
+				Name:    d.Name(),
+				ModTime: d.ModTime(),
+				Size:    d.Size(),
+				Type:    mime.TypeByExtension(filepath.Ext(d.Name())),
+			})
+		}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(body)
@@ -70,7 +70,7 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-    // cors
+		// cors
 		w.Header().Set("access-control-allow-origin", "*")
 
 		upath := path.Clean(r.URL.Path)
