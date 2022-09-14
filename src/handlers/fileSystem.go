@@ -68,34 +68,41 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 	json.NewEncoder(w).Encode(body)
 }
 
+func handleGet(w http.ResponseWriter, r *http.Request, root string) {
+	// cors
+	w.Header().Set("access-control-allow-origin", "*")
+
+	upath := path.Clean(r.URL.Path)
+	dirPath := path.Join(root, upath)
+	dir, err := os.Open(dirPath)
+	if err != nil {
+		msg, code := toHTTPError(err)
+		http.Error(w, msg, code)
+		return
+	}
+	defer dir.Close()
+	stats, err := dir.Stat()
+	if err != nil {
+		msg, code := toHTTPError(err)
+		http.Error(w, msg, code)
+		return
+	}
+	if stats.IsDir() {
+		serverDirectory(w, r, dir)
+		return
+	}
+	action := r.URL.Query().Get("action")
+	if action == "download" {
+		w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
+	}
+	http.ServeContent(w, r, stats.Name(), stats.ModTime(), dir)
+
+}
+
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// cors
-		w.Header().Set("access-control-allow-origin", "*")
-
-		upath := path.Clean(r.URL.Path)
-		dirPath := path.Join(root, upath)
-		dir, err := os.Open(dirPath)
-		if err != nil {
-			msg, code := toHTTPError(err)
-			http.Error(w, msg, code)
-			return
-		}
-		defer dir.Close()
-		stats, err := dir.Stat()
-		if err != nil {
-			msg, code := toHTTPError(err)
-			http.Error(w, msg, code)
-			return
-		}
-		if stats.IsDir() {
-			serverDirectory(w, r, dir)
-			return
-		}
-		action := r.URL.Query().Get("action")
-		if action == "download" {
-			w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
-		}
-		http.ServeContent(w, r, stats.Name(), stats.ModTime(), dir)
+    if r.Method == http.MethodGet {
+      handleGet(w, r, root)
+    }
 	}
 }
