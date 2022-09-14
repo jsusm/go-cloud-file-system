@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -29,10 +30,18 @@ func toHTTPError(err error) (string, int) {
 }
 
 type dirEntry struct {
+	Name string `json:"name"`
+}
+type fileEntry struct {
 	Name    string    `json:"name"`
-	IsDir   bool      `json:"isDir"`
 	ModTime time.Time `json:"modTime"`
 	Size    int64     `json:"size"`
+	Type    string    `json:"type"`
+}
+
+type ServeDirectoryResponse struct {
+	Directories []dirEntry  `json:"directories"`
+	Files       []fileEntry `json:"files"`
 }
 
 func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
@@ -40,21 +49,32 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 	if err != nil && !errors.Is(err, io.EOF) {
 		msg, code := toHTTPError(err)
 		http.Error(w, msg, code)
-    return
+		return
 	}
-	var body = []dirEntry{}
+	var body = ServeDirectoryResponse{}
 	for _, d := range dirs {
-		body = append(body, dirEntry{d.Name(), d.IsDir(), d.ModTime(), d.Size()})
+    if d.IsDir(){
+      body.Directories = append(body.Directories, dirEntry{ Name: d.Name()})
+    }else{
+      body.Files = append(body.Files, fileEntry{
+        Name: d.Name(),
+        ModTime: d.ModTime(),
+        Size: d.Size(),
+        Type: mime.TypeByExtension(filepath.Ext(d.Name())),
+      })
+    }
 	}
-  w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(body)
 }
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("access-control-allow-origin", "*")
-		upath := path.Clean(r.URL.Path) 
-    dirPath := path.Join(root, upath)
+    // cors
+		w.Header().Set("access-control-allow-origin", "*")
+
+		upath := path.Clean(r.URL.Path)
+		dirPath := path.Join(root, upath)
 		dir, err := os.Open(dirPath)
 		if err != nil {
 			msg, code := toHTTPError(err)
@@ -72,10 +92,10 @@ func FileStatsHandler(root string) http.HandlerFunc {
 			serverDirectory(w, r, dir)
 			return
 		}
-    action := r.URL.Query().Get("action")
-    if action == "download" {
-      w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
-    }
-    http.ServeContent(w, r, stats.Name(), stats.ModTime(), dir)
+		action := r.URL.Query().Get("action")
+		if action == "download" {
+			w.Header().Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(dirPath)))
+		}
+		http.ServeContent(w, r, stats.Name(), stats.ModTime(), dir)
 	}
 }
