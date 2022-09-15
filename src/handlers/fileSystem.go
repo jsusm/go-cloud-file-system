@@ -112,42 +112,42 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, root string) {
 	}
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
-    fmt.Printf("Processing File: %s", fh.Filename)
+		fmt.Printf("Processing File: %s", fh.Filename)
 		if fh.Size > MAX_UPLOAD_SIZE {
 			http.Error(w, "The uploaded file is too big. Please use a file less than 1MB in size", http.StatusBadRequest)
 			return
 		}
-    file, err := fh.Open()
-    if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
-    }
-    defer file.Close()
+		file, err := fh.Open()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
 
-    f, err := os.Create(path.Join(dirPath, fmt.Sprintf("%s-%d", fh.Filename, time.Now().UnixNano())))
-    if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
-    }
-    defer f.Close()
-    _, err = io.Copy(f, file)
-    if err != nil {
-      http.Error(w, err.Error(), http.StatusInternalServerError)
-      return
-    }
-    fmt.Printf("Uploaded file: %s", fh.Filename)
+		f, err := os.Create(path.Join(dirPath, fmt.Sprintf("%s-%d", fh.Filename, time.Now().UnixNano())))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+		_, err = io.Copy(f, file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Printf("Uploaded file: %s", fh.Filename)
 	}
-  w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Hit fileStatsHandler ")
-    switch r.Method {
-    case http.MethodGet:
+		switch r.Method {
+		case http.MethodGet:
 			handleGet(w, r, root)
-    case http.MethodPost:
+		case http.MethodPost:
 			handleUploadFile(w, r, root)
-    }
+		}
 	}
 }
