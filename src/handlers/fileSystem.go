@@ -143,11 +143,11 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, root string) {
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Hit fileStatsHandler ")
-		if r.Method == http.MethodGet {
+    switch r.Method {
+    case http.MethodGet:
 			handleGet(w, r, root)
-		}
-		if r.Method == http.MethodPost {
+    case http.MethodPost:
 			handleUploadFile(w, r, root)
-		}
+    }
 	}
 }
