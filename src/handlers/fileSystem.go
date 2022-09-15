@@ -14,6 +14,10 @@ import (
 	"time"
 )
 
+const (
+	MAX_UPLOAD_SIZE = 20 << 20
+)
+
 func sendJSON(w http.ResponseWriter, r *http.Request, b interface{}) {
 	json.NewEncoder(w).Encode(b)
 }
@@ -99,10 +103,51 @@ func handleGet(w http.ResponseWriter, r *http.Request, root string) {
 
 }
 
+func handleUploadFile(w http.ResponseWriter, r *http.Request, root string) {
+	upath := path.Clean(r.URL.Path)
+	dirPath := path.Join(root, upath)
+	w.Header().Set("access-control-allow-origin", "*")
+	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	files := r.MultipartForm.File["files"]
+	for _, fh := range files {
+    fmt.Printf("Processing File: %s", fh.Filename)
+		if fh.Size > MAX_UPLOAD_SIZE {
+			http.Error(w, "The uploaded file is too big. Please use a file less than 1MB in size", http.StatusBadRequest)
+			return
+		}
+    file, err := fh.Open()
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    defer file.Close()
+
+    f, err := os.Create(path.Join(dirPath, fmt.Sprintf("%s-%d", fh.Filename, time.Now().UnixNano())))
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    defer f.Close()
+    _, err = io.Copy(f, file)
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    fmt.Printf("Uploaded file: %s", fh.Filename)
+	}
+  w.WriteHeader(http.StatusCreated)
+}
+
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-    if r.Method == http.MethodGet {
-      handleGet(w, r, root)
-    }
+		fmt.Println("Hit fileStatsHandler ")
+		if r.Method == http.MethodGet {
+			handleGet(w, r, root)
+		}
+		if r.Method == http.MethodPost {
+			handleUploadFile(w, r, root)
+		}
 	}
 }
