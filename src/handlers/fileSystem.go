@@ -72,12 +72,7 @@ func serverDirectory(w http.ResponseWriter, r *http.Request, dir *os.File) {
 	json.NewEncoder(w).Encode(body)
 }
 
-func handleGet(w http.ResponseWriter, r *http.Request, root string) {
-	// cors
-	w.Header().Set("access-control-allow-origin", "*")
-
-	upath := path.Clean(r.URL.Path)
-	dirPath := path.Join(root, upath)
+func handleGet(w http.ResponseWriter, r *http.Request, dirPath string) {
 	dir, err := os.Open(dirPath)
 	if err != nil {
 		msg, code := toHTTPError(err)
@@ -103,10 +98,7 @@ func handleGet(w http.ResponseWriter, r *http.Request, root string) {
 
 }
 
-func handleUploadFile(w http.ResponseWriter, r *http.Request, root string) {
-	upath := path.Clean(r.URL.Path)
-	dirPath := path.Join(root, upath)
-	w.Header().Set("access-control-allow-origin", "*")
+func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -142,12 +134,17 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, root string) {
 
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Hit fileStatsHandler ")
+    // cors
+    w.Header().Set("access-control-allow-origin", "*")
+
+    upath := path.Clean(r.URL.Path)
+    dirPath := path.Join(root, upath)
+
 		switch r.Method {
 		case http.MethodGet:
-			handleGet(w, r, root)
+			handleGet(w, r, dirPath)
 		case http.MethodPost:
-			handleUploadFile(w, r, root)
+			handleUploadFile(w, r, dirPath)
 		}
 	}
 }
