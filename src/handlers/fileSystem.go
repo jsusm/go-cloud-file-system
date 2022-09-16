@@ -165,6 +165,21 @@ func handleDeleteFile(w http.ResponseWriter, r *http.Request, dirPath string){
   fmt.Printf("%s Deleted successfully", dirPath)
 }
 
+func handleCreateFolder(w http.ResponseWriter, r *http.Request, dirPath string){
+  fmt.Println("creating folder ", dirPath)
+  err := os.Mkdir(dirPath, 0755)
+  if err != nil {
+    if os.IsExist(err) {
+      http.Error(w, "This folder already exist", 400)
+      return
+    }
+    msg, code := toHTTPError(err)
+    http.Error(w, msg, code)
+    return
+  }
+  w.WriteHeader(201)
+}
+
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
     // cors
@@ -178,6 +193,11 @@ func FileStatsHandler(root string) http.HandlerFunc {
 		case http.MethodGet:
 			handleGet(w, r, dirPath)
 		case http.MethodPost:
+      resourceType := r.URL.Query().Get("type")
+      if resourceType == "folder" {
+        handleCreateFolder(w,r,dirPath)
+        return
+      }
 			handleUploadFile(w, r, dirPath)
     case http.MethodDelete:
       if upath == "" {
