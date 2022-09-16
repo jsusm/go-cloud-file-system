@@ -106,7 +106,6 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 	}
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
-		fmt.Printf("Processing File: %s", fh.Filename)
 		if fh.Size > MAX_UPLOAD_SIZE {
 			http.Error(w, "The uploaded file is too big. Please use a file less than 1MB in size", http.StatusBadRequest)
 			return
@@ -129,14 +128,12 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		fmt.Printf("Uploaded file: %s", fh.Filename)
 	}
 	w.WriteHeader(http.StatusCreated)
 }
 
 func handleDeleteFile(w http.ResponseWriter, r *http.Request, dirPath string){
   file, err := os.Open(dirPath)
-  fmt.Printf("Deleting %s", dirPath)
   if err != nil {
     msg, code := toHTTPError(err)
     http.Error(w, msg, code)
@@ -163,11 +160,9 @@ func handleDeleteFile(w http.ResponseWriter, r *http.Request, dirPath string){
     return
   }
   w.WriteHeader(200)
-  fmt.Printf("%s Deleted successfully", dirPath)
 }
 
 func handleCreateFolder(w http.ResponseWriter, r *http.Request, dirPath string){
-  fmt.Println("creating folder ", dirPath)
   err := os.Mkdir(dirPath, 0755)
   if err != nil {
     if os.IsExist(err) {
