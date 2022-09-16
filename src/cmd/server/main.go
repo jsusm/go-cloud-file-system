@@ -14,10 +14,12 @@ import (
 func main() {
   err := godotenv.Load()
   if err != nil {
-    log.Fatal("Error loading .env")
+    fmt.Println(".env file not found, using enviroment variables.")
   }
-
   storage_dir := os.Getenv("STORAGE_DIR")
+  if storage_dir == "" {
+    log.Panic("env variable: STORAGE_DIR, must be set")
+  }
 
   http.Handle("/browse/", http.StripPrefix("/browse/", handlers.FileStatsHandler(storage_dir)))
 
