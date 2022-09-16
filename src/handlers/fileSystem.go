@@ -101,6 +101,7 @@ func handleGet(w http.ResponseWriter, r *http.Request, dirPath string) {
 func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
 	}
 	files := r.MultipartForm.File["files"]
 	for _, fh := range files {
@@ -132,10 +133,43 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+func handleDeleteFile(w http.ResponseWriter, r *http.Request, dirPath string){
+  file, err := os.Open(dirPath)
+  fmt.Printf("Deleting %s", dirPath)
+  if err != nil {
+    msg, code := toHTTPError(err)
+    http.Error(w, msg, code)
+    return
+  }
+  stats, err := file.Stat()
+  if err != nil {
+    msg, code := toHTTPError(err)
+    http.Error(w, msg, code)
+    return
+  }
+  if stats.IsDir(){
+    err := os.RemoveAll(dirPath)
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+      return
+    }
+    w.WriteHeader(200)
+    return
+  }
+  os.Remove(dirPath)
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  w.WriteHeader(200)
+  fmt.Printf("%s Deleted successfully", dirPath)
+}
+
 func FileStatsHandler(root string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
     // cors
     w.Header().Set("access-control-allow-origin", "*")
+    w.Header().Set("Access-Control-Allow-Methods", "POST, GET, DELETE")
 
     upath := path.Clean(r.URL.Path)
     dirPath := path.Join(root, upath)
@@ -145,6 +179,13 @@ func FileStatsHandler(root string) http.HandlerFunc {
 			handleGet(w, r, dirPath)
 		case http.MethodPost:
 			handleUploadFile(w, r, dirPath)
+    case http.MethodDelete:
+      if upath == "" {
+        w.Write([]byte("This route is protected."))
+        w.WriteHeader(http.StatusForbidden)
+        return
+      }
+      handleDeleteFile(w, r, dirPath)
 		}
 	}
 }
