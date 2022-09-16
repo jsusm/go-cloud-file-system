@@ -19,8 +19,6 @@ func main() {
 
   storage_dir := os.Getenv("STORAGE_DIR")
 
-  fs := http.FileServer(http.Dir(storage_dir))
-  http.Handle("/raw/", http.StripPrefix("/raw/", fs))
   http.Handle("/browse/", http.StripPrefix("/browse/", handlers.FileStatsHandler(storage_dir)))
 
   port := os.Getenv("PORT")
