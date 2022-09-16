@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"time"
 )
 
@@ -117,7 +118,7 @@ func handleUploadFile(w http.ResponseWriter, r *http.Request, dirPath string) {
 		}
 		defer file.Close()
 
-		f, err := os.Create(path.Join(dirPath, fmt.Sprintf("%s-%d", fh.Filename, time.Now().UnixNano())))
+		f, err := os.Create(path.Join(dirPath, fmt.Sprintf("%s-%s", strconv.FormatInt(time.Now().UnixNano(), 32), fh.Filename)))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
