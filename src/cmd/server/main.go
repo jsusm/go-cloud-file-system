@@ -18,12 +18,16 @@ func main() {
   }
   storage_dir := os.Getenv("STORAGE_DIR")
   if storage_dir == "" {
-    log.Panic("env variable: STORAGE_DIR, must be set")
+    log.Panic("env variable: 'STORAGE_DIR', must be set")
   }
 
   http.Handle("/browse/", http.StripPrefix("/browse/", handlers.FileStatsHandler(storage_dir)))
 
   port := os.Getenv("PORT")
+  if port == "" {
+    log.Panic("env variable: 'PORT' must be set")
+  }
+
   fmt.Println("Listen in port", port)
   http.ListenAndServe(port, nil)
 }
