@@ -14,7 +14,7 @@ import (
 func main() {
   err := godotenv.Load()
   if err != nil {
-    fmt.Println(".env file not found, using enviroment variables.")
+    fmt.Println(".env file not found, using environment variables.")
   }
   storage_dir := os.Getenv("STORAGE_DIR")
   if storage_dir == "" {
@@ -25,7 +25,8 @@ func main() {
 
   port := os.Getenv("PORT")
   if port == "" {
-    log.Panic("env variable: 'PORT' must be set")
+    fmt.Println("PORT is set as :8080")
+    port = ":8080"
   }
 
   fmt.Println("Listen in port", port)
